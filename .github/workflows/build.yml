@@ -11,11 +11,16 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
+    - name: Fix broken path in project file
+      run: |
+        (Get-Content sdk/sdk.vcxproj) -replace 'engine\\debug\\debug_overlay.cpp', 'sdk\engine\debug\debug_overlay.cpp' | Set-Content sdk/sdk.vcxproj
+      shell: powershell
+
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v2
 
     - name: Build Solution
-      run: msbuild millionware.sln
+      run: msbuild millionware.sln /p:Configuration="beta debug" /p:Platform=x86
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
