@@ -15,10 +15,12 @@ jobs:
       uses: microsoft/setup-msbuild@v2
 
     - name: Build Solution
-      run: msbuild millionware.sln /p:Configuration=Release /p:Platform=x86
+      run: msbuild millionware.sln
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: millionware-dll
-        path: Release/millionware.dll
+        path: |
+          **/*.dll
+          !**/dep/**
