@@ -11,26 +11,12 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Fix project layout and copy debug files everywhere
-      run: |
-        # Исправляем путь к .cpp в файле проекта
-        (Get-Content sdk/sdk.vcxproj) -replace 'engine\\debug\\debug_overlay.cpp', 'sdk\engine\debug\debug_overlay.cpp' | Set-Content sdk/sdk.vcxproj
-        
-        # Копируем папку дебага в корень проекта на случай, если компилятор ищет её там
-        New-Item -ItemType Directory -Force -Path "engine/debug"
-        Copy-Item -Path "sdk/engine/debug/*" -Destination "engine/debug" -Force
-        
-        # Копируем папку дебага на уровень выше hooks и lua (в корень папки sdk)
-        New-Item -ItemType Directory -Force -Path "sdk/sdk/engine/debug"
-        Copy-Item -Path "sdk/engine/debug/*" -Destination "sdk/sdk/engine/debug" -Force
-      shell: powershell
-
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v2
 
     - name: Build Solution
-      run: msbuild millionware.sln /p:Configuration="beta debug" /p:Platform=x86
-
+      run: msbuild millionware.sln /p:Configuration="beta debug" /p:Platform=x86 /p:IncludePath="D:\a\milli0nware\milli0nware;$(IncludePath)"
+      
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
