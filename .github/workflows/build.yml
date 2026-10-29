@@ -11,19 +11,18 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Fix broken path in project file
+    - name: Fix project layout and copy debug files everywhere
       run: |
+        # Исправляем путь к .cpp в файле проекта
         (Get-Content sdk/sdk.vcxproj) -replace 'engine\\debug\\debug_overlay.cpp', 'sdk\engine\debug\debug_overlay.cpp' | Set-Content sdk/sdk.vcxproj
-      shell: powershell
-
-    - name: Fix broken include paths in code files
-      run: |
-        Get-ChildItem -Recurse -Include *.cpp, *.h | ForEach-Object {
-            $content = Get-Content $_.FullName
-            $content = $content -replace 'engine/debug/debug_overlay.h', 'sdk/engine/debug/debug_overlay.h'
-            $content = $content -replace '\.\./engine/debug/debug_overlay.h', '../sdk/engine/debug/debug_overlay.h'
-            $content | Set-Content $_.FullName
-        }
+        
+        # Копируем папку дебага в корень проекта на случай, если компилятор ищет её там
+        New-Item -ItemType Directory -Force -Path "engine/debug"
+        Copy-Item -Path "sdk/engine/debug/*" -Destination "engine/debug" -Force
+        
+        # Копируем папку дебага на уровень выше hooks и lua (в корень папки sdk)
+        New-Item -ItemType Directory -Force -Path "sdk/sdk/engine/debug"
+        Copy-Item -Path "sdk/engine/debug/*" -Destination "sdk/sdk/engine/debug" -Force
       shell: powershell
 
     - name: Add MSBuild to PATH
