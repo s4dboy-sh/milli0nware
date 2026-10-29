@@ -16,6 +16,16 @@ jobs:
         (Get-Content sdk/sdk.vcxproj) -replace 'engine\\debug\\debug_overlay.cpp', 'sdk\engine\debug\debug_overlay.cpp' | Set-Content sdk/sdk.vcxproj
       shell: powershell
 
+    - name: Fix broken include paths in code files
+      run: |
+        Get-ChildItem -Recurse -Include *.cpp, *.h | ForEach-Object {
+            $content = Get-Content $_.FullName
+            $content = $content -replace 'engine/debug/debug_overlay.h', 'sdk/engine/debug/debug_overlay.h'
+            $content = $content -replace '\.\./engine/debug/debug_overlay.h', '../sdk/engine/debug/debug_overlay.h'
+            $content | Set-Content $_.FullName
+        }
+      shell: powershell
+
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v2
 
