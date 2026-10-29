@@ -1,6 +1,10 @@
 name: Build Millionware DLL
 
 on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
   workflow_dispatch:
 
 jobs:
@@ -8,19 +12,35 @@ jobs:
     runs-on: windows-latest
 
     steps:
+    # 1. Клонируем репозиторий s4dboy-sh/milli0nware
     - name: Checkout repository
       uses: actions/checkout@v4
 
+    # 2. Добавляем MSBuild в PATH (инструменты сборки Visual Studio)
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v2
 
+    # 3. Настраиваем NuGet (если в проекте используются внешние пакеты)
+    - name: Restore NuGet packages
+      run: nuget restore millionware.sln
+
+    # 4. Собираем проект с принудительным указанием Include-путей
+    #    Флаг /p:ForceImportBeforeCppTargets внедряет глобальные пути для всех подпроектов (.vcxproj)
     - name: Build Solution
-      run: msbuild millionware.sln /p:Configuration="beta debug" /p:Platform=x86 /p:IncludePath="D:\a\milli0nware\milli0nware;$(IncludePath)"
-      
-    - name: Upload Artifact
+      run: |
+        msbuild millionware.sln `
+          -p:Configuration="beta debug" `
+          -p:Platform=x86 `
+          -p:AdditionalIncludeDirectories="${{ github.workspace }};${{ github.workspace }}/engine;${{ github.workspace }}/sdk;${{ github.workspace }}/dep" `
+          -v:m
+
+    # 5. Ищем и загружаем скомпилированную DLL в артефакты GitHub
+    #    Скрипт автоматически найдет millionware.dll в папках сборки (например, beta debug/)
+    - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: millionware-dll
+        name: millionware-beta-debug-dll
         path: |
-          **/*.dll
-          !**/dep/**
+          **/beta debug/*.dll
+          **/*millionware*.dll
+        if-no-files-found: error
